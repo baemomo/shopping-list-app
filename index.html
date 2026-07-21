@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>쇼핑 리스트</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    background: #f4f5f7;
+    margin: 0;
+    padding: 40px 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 24px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 20px;
+    color: #222;
+  }
+  form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: #6c5ce7;
+  }
+  button {
+    border: none;
+    border-radius: 8px;
+    background: #6c5ce7;
+    color: #fff;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button:hover { background: #5a4bd1; }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #eee;
+  }
+  li:last-child { border-bottom: none; }
+  li input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  li span {
+    flex: 1;
+    font-size: 14px;
+    color: #222;
+    word-break: break-word;
+  }
+  li.checked span {
+    text-decoration: line-through;
+    color: #aaa;
+  }
+  li button.delete {
+    background: none;
+    color: #bbb;
+    padding: 4px 8px;
+    font-size: 18px;
+    line-height: 1;
+  }
+  li button.delete:hover { color: #e74c3c; background: none; }
+  .empty {
+    text-align: center;
+    color: #aaa;
+    font-size: 14px;
+    padding: 24px 0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🛒 쇼핑 리스트</h1>
+  <form id="add-form">
+    <input type="text" id="item-input" placeholder="살 물건을 입력하세요" autocomplete="off">
+    <button type="submit">추가</button>
+  </form>
+  <ul id="item-list"></ul>
+  <p class="empty" id="empty-msg" style="display:none;">목록이 비어있습니다</p>
+</div>
+
+<script>
+  const STORAGE_KEY = "shopping-list-items";
+  const form = document.getElementById("add-form");
+  const input = document.getElementById("item-input");
+  const list = document.getElementById("item-list");
+  const emptyMsg = document.getElementById("empty-msg");
+
+  function loadItems() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  function saveItems(items) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function render() {
+    const items = loadItems();
+    list.innerHTML = "";
+    emptyMsg.style.display = items.length === 0 ? "block" : "none";
+
+    items.forEach(item => {
+      const li = document.createElement("li");
+      li.className = item.checked ? "checked" : "";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = item.checked;
+      checkbox.addEventListener("change", () => toggleItem(item.id));
+
+      const span = document.createElement("span");
+      span.textContent = item.text;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete";
+      deleteBtn.textContent = "×";
+      deleteBtn.addEventListener("click", () => deleteItem(item.id));
+
+      li.append(checkbox, span, deleteBtn);
+      list.appendChild(li);
+    });
+  }
+
+  function addItem(text) {
+    const items = loadItems();
+    items.push({ id: crypto.randomUUID(), text, checked: false });
+    saveItems(items);
+    render();
+  }
+
+  function toggleItem(id) {
+    const items = loadItems().map(item =>
+      item.id === id ? { ...item, checked: !item.checked } : item
+    );
+    saveItems(items);
+    render();
+  }
+
+  function deleteItem(id) {
+    const items = loadItems().filter(item => item.id !== id);
+    saveItems(items);
+    render();
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    addItem(text);
+    input.value = "";
+    input.focus();
+  });
+
+  render();
+</script>
+</body>
+</html>
